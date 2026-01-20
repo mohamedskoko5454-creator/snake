@@ -391,13 +391,17 @@
             }
 
             #leaderboard,
-            #stats-hud {
-                display: none;
+            #stats-hud,
+            #experience-bar,
+            #ui-layer .panel {
+                display: none !important;
             }
 
             #xp-bar-outer {
-                width: 80%;
+                width: 60%;
                 top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
             }
 
             #abilities-dock {
@@ -440,6 +444,12 @@
             border-radius: 20px;
             padding: 15px;
             z-index: 100;
+            display: none;
+            /* Hidden by default */
+        }
+
+        #settings-panel.active {
+            display: block;
         }
 
         .setting-row {
@@ -1099,7 +1109,7 @@
 
             toggle() {
                 this.panelOpen = !this.panelOpen;
-                document.getElementById('settings-panel').classList.toggle('hidden', !this.panelOpen);
+                document.getElementById('settings-panel').classList.toggle('active', this.panelOpen);
             },
 
             setSound(val) { AUDIO.volume = val / 100; localStorage.setItem('h_sound', val); },
@@ -1573,13 +1583,13 @@
 
             update() {
                 if (this.isDead) return;
-                // SPEED & RESPONSIVENESS TUNING
-                // Reduced speed for better control on mobile/PC
-                let speed = (this.isBoosting && this.score > 5) ? 9 : 5; // Base: 5 (was 7), Boost: 9 (was 14)
+                // SPEED & RESPONSIVENESS TUNING (FINAL)
+                // SLOW MOTION: Reduced to 4 / 7 for absolute control
+                let speed = (this.isBoosting && this.score > 5) ? 7 : 4; // Base: 4, Boost: 7
                 if (this.isBoosting && !this.isBot) this.score -= 0.18;
 
                 let diff = Math.atan2(Math.sin(this.targetAngle - this.angle), Math.cos(this.targetAngle - this.angle));
-                this.angle += diff * 0.14; // Slightly tighter turning (was 0.125)
+                this.angle += diff * 0.16; // Even faster turning for agility (0.16)
 
                 this.x += Math.cos(this.angle) * speed;
                 this.y += Math.sin(this.angle) * speed;
