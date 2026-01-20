@@ -1167,7 +1167,7 @@
             isHost: false,
             otherPlayers: new Map(),
             updates: new Map(),
-            INTERP_DELAY: 80, // Tighter buffer
+            INTERP_DELAY: 150, // Default safe buffer for high latency
             lastUpdate: 0,
             updateRate: 30, // Send every 30ms (33 ticks/sec)
             serverFood: [],
@@ -1231,6 +1231,12 @@
                     this.ping = Date.now() - this.pingStart;
                     const el = document.getElementById('debug-ping');
                     if (el) el.innerText = `Ping: ${this.ping}ms`;
+
+                    // Adaptive Interpolation
+                    // If ping is high, increase buffer to prevent stutter
+                    // Target buffer = ping + 50ms safety margin
+                    const targetDelay = Math.max(100, this.ping + 50);
+                    this.INTERP_DELAY = this.INTERP_DELAY * 0.9 + targetDelay * 0.1; // Smooth transition
                 });
 
                 this.socket.on('error', (data) => {
