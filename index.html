@@ -870,23 +870,41 @@
             <div class="room-tabs">
                 <div class="room-tab active" id="tab-create" onclick="MULTIPLAYER.switchTab('create')">🆕 CREATE ROOM
                 </div>
-                <div class="room-tab" id="tab-join" onclick="MULTIPLAYER.switchTab('join')">🔗 JOIN ROOM</div>
+                <div class="room-tab" id="tab-join" onclick="MULTIPLAYER.switchTab('join')">🔗 BROWSER</div>
             </div>
 
             <!-- Create Room Content -->
             <div id="create-content">
-                <p style="color:#94a3b8; margin-bottom:20px;">Create a new room and share the code with friends!</p>
-                <button class="main-btn btn-green" style="width:100%;" onclick="MULTIPLAYER.createRoom()">CREATE
-                    ROOM</button>
+                <p style="color:#94a3b8; margin-bottom:20px;">Create or join quickly!</p>
+                <input type="text" id="name-input" class="input-field" placeholder="YOUR NAME" maxlength="10"
+                    style="margin-bottom:15px; letter-spacing:1px;">
+
+                <button class="main-btn btn-green" style="width:100%; margin-bottom:15px;"
+                    onclick="MULTIPLAYER.createRoom()">CREATE ROOM</button>
+
+                <button class="main-btn" style="width:100%; background:#8b5cf6;" onclick="MULTIPLAYER.quickPlay()">⚡
+                    QUICK PLAY</button>
             </div>
 
             <!-- Join Room Content -->
             <div id="join-content" style="display:none;">
-                <p style="color:#94a3b8; margin-bottom:15px;">Enter the room code to join:</p>
-                <input type="text" id="room-code-input" class="input-field" placeholder="ROOM CODE" maxlength="6"
-                    style="text-transform:uppercase; letter-spacing:5px;">
-                <button class="main-btn btn-green" style="width:100%; margin-top:15px;"
-                    onclick="MULTIPLAYER.joinRoom()">JOIN ROOM</button>
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="room-code-input" class="input-field" placeholder="CODE" maxlength="6"
+                        style="text-transform:uppercase; letter-spacing:3px; flex:1;">
+                    <button class="main-btn btn-green" style="width:auto; padding:0 15px;"
+                        onclick="MULTIPLAYER.joinRoom()">JOIN</button>
+                </div>
+
+                <div style="display:flex; align-items:center; color:#64748b; font-size:12px; margin:10px 0;">
+                    <div style="flex:1; height:1px; background:#334155;"></div>
+                    <span style="padding:0 10px;">OR CHOOSE ROOM</span>
+                    <div style="flex:1; height:1px; background:#334155;"></div>
+                </div>
+
+                <div id="room-list-container" class="room-list"
+                    style="max-height:200px; overflow-y:auto; background:#0f172a; border-radius:8px; padding:5px;">
+                    <div style="padding:20px; color:#64748b; text-align:center;">Loading rooms...</div>
+                </div>
             </div>
 
             <!-- Waiting Content -->
@@ -1141,6 +1159,8 @@
             playerId: null,
             isHost: false,
             otherPlayers: new Map(),
+            updates: new Map(),
+            INTERP_DELAY: 100,
             serverFood: [],
 
             // Change this to your Render.com URL after deployment
@@ -1154,12 +1174,18 @@
                     script.onload = () => console.log('Socket.IO loaded');
                     document.head.appendChild(script);
                 }
+
+                setInterval(() => {
+                    if (this.connected && !document.getElementById('room-screen').classList.contains('hidden')) {
+                        this.socket.emit('getRooms');
+                    }
+                }, 5000);
             },
 
-            connect() {
+            connect(callback) {
                 if (!window.io) {
                     GAME.notify('⚠️ Loading multiplayer...');
-                    setTimeout(() => this.connect(), 500);
+                    setTimeout(() => this.connect(callback), 500);
                     return;
                 }
 
@@ -1169,9 +1195,12 @@
 
                 this.socket.on('connect', () => {
                     this.connected = true;
-                    console.log('Connected to server');
                     GAME.notify('✅ Connected to server!');
+                    this.socket.emit('getRooms');
+                    if (callback) callback();
                 });
+
+                this.socket.on('roomList', (rooms) => this.updateRoomList(rooms));
 
                 this.socket.on('disconnect', () => {
                     this.connected = false;
@@ -1183,23 +1212,11 @@
                 });
 
                 this.socket.on('roomCreated', (data) => {
-                    this.roomCode = data.roomCode;
-                    this.playerId = data.playerId;
+                    this.handleJoin(data);
                     this.isHost = true;
-                    this.serverFood = data.food;
-                    document.getElementById('display-room-code').innerText = data.roomCode;
-                    document.getElementById('create-content').style.display = 'none';
-                    document.getElementById('waiting-content').style.display = 'block';
-                    this.updatePlayerCount(Object.keys(data.players).length);
                 });
 
-                this.socket.on('roomJoined', (data) => {
-                    this.roomCode = data.roomCode;
-                    this.playerId = data.playerId;
-                    this.serverFood = data.food;
-                    this.loadPlayers(data.players);
-                    GAME.startOnline(data);
-                });
+                this.socket.on('roomJoined', (data) => this.handleJoin(data));
 
                 this.socket.on('playerJoined', (data) => {
                     this.otherPlayers.set(data.id, this.createRemotePlayer(data));
@@ -1209,18 +1226,22 @@
 
                 this.socket.on('playerLeft', (data) => {
                     this.otherPlayers.delete(data.id);
+                    this.updates.delete(data.id);
                     GAME.notify(`🔴 Player left`);
+                    this.updatePlayerCount(this.otherPlayers.size + 1);
                 });
 
                 this.socket.on('playerMoved', (data) => {
-                    const player = this.otherPlayers.get(data.id);
-                    if (player) {
-                        player.x = data.x;
-                        player.y = data.y;
-                        player.angle = data.angle;
-                        player.segments = data.segments || [];
-                        player.score = data.score || 0;
-                    }
+                    if (!this.updates.has(data.id)) this.updates.set(data.id, []);
+                    const buffer = this.updates.get(data.id);
+                    buffer.push({
+                        t: Date.now(),
+                        x: data.x, y: data.y,
+                        angle: data.angle,
+                        segments: data.segments,
+                        score: data.score
+                    });
+                    if (buffer.length > 10) buffer.shift();
                 });
 
                 this.socket.on('foodEaten', (data) => {
@@ -1238,16 +1259,55 @@
                 this.socket.on('playerRespawned', (data) => {
                     const player = this.otherPlayers.get(data.id);
                     if (player) {
-                        player.x = data.x;
-                        player.y = data.y;
-                        player.isDead = false;
-                        player.segments = [];
+                        player.x = data.x; player.y = data.y;
+                        player.isDead = false; player.segments = [];
+                        if (this.updates.has(data.id)) this.updates.set(data.id, []);
                     }
                 });
 
                 this.socket.on('chatMessage', (data) => {
                     GAME.notify(`💬 ${data.name}: ${data.message}`);
                 });
+            },
+
+            handleJoin(data) {
+                this.roomCode = data.roomCode;
+                this.playerId = data.playerId;
+                this.serverFood = data.food;
+                this.loadPlayers(data.players);
+                this.updates.clear();
+                GAME.startOnline(data);
+            },
+
+            getInterpolatedState(id) {
+                const buffer = this.updates.get(id);
+                if (!buffer || buffer.length < 2) return null;
+
+                const now = Date.now();
+                const renderTime = now - this.INTERP_DELAY;
+
+                let t1 = buffer[0], t2 = buffer[1];
+                while (buffer.length > 2 && t2.t <= renderTime) {
+                    buffer.shift();
+                    t1 = buffer[0]; t2 = buffer[1];
+                }
+
+                if (t1.t >= renderTime && t1.t > now) return t1;
+
+                const ratio = Math.max(0, Math.min(1, (renderTime - t1.t) / (t2.t - t1.t)));
+                return {
+                    x: t1.x + (t2.x - t1.x) * ratio,
+                    y: t1.y + (t2.y - t1.y) * ratio,
+                    angle: this.lerpAngle(t1.angle, t2.angle, ratio),
+                    segments: t2.segments,
+                    score: t2.score
+                };
+            },
+
+            lerpAngle(a, b, t) {
+                const diff = b - a;
+                const adjustedDiff = ((diff + Math.PI) % (2 * Math.PI)) - Math.PI;
+                return a + adjustedDiff * t;
             },
 
             createRemotePlayer(data) {
@@ -1277,25 +1337,49 @@
                 if (el) el.innerText = count;
             },
 
+            updateRoomList(rooms) {
+                const list = document.getElementById('room-list-container');
+                if (!list) return;
+
+                if (rooms.length === 0) {
+                    list.innerHTML = '<div style="padding:20px;color:#64748b">No rooms found. Create one!</div>';
+                    return;
+                }
+
+                list.innerHTML = rooms.map(r => `
+                    <div class="room-item" onclick="document.getElementById('room-code-input').value='${r.code}'; MULTIPLAYER.joinRoom();">
+                        <span class="code">${r.code}</span>
+                        <span class="count">${r.count}/${r.max} 👤</span>
+                        <button class="join-btn">JOIN</button>
+                    </div>
+                `).join('');
+            },
+
             switchTab(tab) {
                 document.getElementById('tab-create').classList.toggle('active', tab === 'create');
                 document.getElementById('tab-join').classList.toggle('active', tab === 'join');
                 document.getElementById('create-content').style.display = tab === 'create' ? 'block' : 'none';
                 document.getElementById('join-content').style.display = tab === 'join' ? 'block' : 'none';
                 document.getElementById('waiting-content').style.display = 'none';
+                if (tab === 'join') this.socket.emit('getRooms');
+            },
+
+            quickPlay() {
+                this.connect(() => {
+                    const name = document.getElementById('name-input').value.trim() || 'Player';
+                    const skinId = localStorage.getItem('h_skin') || 'neon';
+                    const skin = CONFIG.SKINS.find(s => s.id === skinId) || CONFIG.SKINS[0];
+                    this.socket.emit('joinRandom', { name, skin });
+                });
             },
 
             createRoom() {
-                if (!this.connected) {
-                    this.connect();
-                    setTimeout(() => this.createRoom(), 1000);
-                    return;
-                }
-                const name = document.getElementById('name-input').value.trim() || 'Player';
-                const skinId = localStorage.getItem('h_skin') || 'neon';
-                const skin = CONFIG.SKINS.find(s => s.id === skinId) || CONFIG.SKINS[0];
-
-                this.socket.emit('createRoom', { name, skin });
+                this.connect(() => {
+                    const name = document.getElementById('name-input').value.trim() || 'Player';
+                    const skinId = localStorage.getItem('h_skin') || 'neon';
+                    const skin = CONFIG.SKINS.find(s => s.id === skinId) || CONFIG.SKINS[0];
+                    this.socket.emit('createRoom', { name, skin });
+                });
             },
 
             joinRoom() {
@@ -1305,17 +1389,12 @@
                     return;
                 }
 
-                if (!this.connected) {
-                    this.connect();
-                    setTimeout(() => this.joinRoom(), 1000);
-                    return;
-                }
-
-                const name = document.getElementById('name-input').value.trim() || 'Player';
-                const skinId = localStorage.getItem('h_skin') || 'neon';
-                const skin = CONFIG.SKINS.find(s => s.id === skinId) || CONFIG.SKINS[0];
-
-                this.socket.emit('joinRoom', { roomCode: code, name, skin });
+                this.connect(() => {
+                    const name = document.getElementById('name-input').value.trim() || 'Player';
+                    const skinId = localStorage.getItem('h_skin') || 'neon';
+                    const skin = CONFIG.SKINS.find(s => s.id === skinId) || CONFIG.SKINS[0];
+                    this.socket.emit('joinRoom', { roomCode: code, name, skin });
+                });
             },
 
             startGame() {

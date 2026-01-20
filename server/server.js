@@ -38,6 +38,65 @@ io.on('connection', (socket) => {
     let currentRoom = null;
     let playerName = 'Player';
 
+    // Get available rooms
+    socket.on('getRooms', () => {
+        const roomList = [];
+        rooms.forEach((game, code) => {
+            if (game.players.size < 20) {
+                roomList.push({
+                    code,
+                    count: game.players.size,
+                    max: 20
+                });
+            }
+        });
+        socket.emit('roomList', roomList);
+    });
+
+    // Join random room
+    socket.on('joinRandom', (data) => {
+        let targetRoom = null;
+
+        // Find first non-full room
+        for (const [code, game] of rooms) {
+            if (game.players.size < 20) {
+                targetRoom = code;
+                break;
+            }
+        }
+
+        // If no room found, create one
+        if (!targetRoom) {
+            targetRoom = generateRoomCode();
+            const game = new Game(targetRoom);
+            rooms.set(targetRoom, game);
+            console.log(`Random join created room: ${targetRoom}`);
+        }
+
+        // Join process (reusing logic)
+        const game = rooms.get(targetRoom);
+        playerName = data.name || 'Player';
+        currentRoom = targetRoom;
+
+        socket.join(targetRoom);
+        game.addPlayer(socket.id, playerName, data.skin);
+
+        socket.emit('roomJoined', {
+            roomCode: targetRoom,
+            playerId: socket.id,
+            players: game.getPlayersData(),
+            food: game.food
+        });
+
+        socket.to(targetRoom).emit('playerJoined', {
+            id: socket.id,
+            name: playerName,
+            ...game.players.get(socket.id)
+        });
+
+        console.log(`${playerName} joined random room: ${targetRoom}`);
+    });
+
     // Create a new room
     socket.on('createRoom', (data) => {
         const roomCode = generateRoomCode();
