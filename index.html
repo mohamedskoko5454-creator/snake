@@ -1160,7 +1160,9 @@
             isHost: false,
             otherPlayers: new Map(),
             updates: new Map(),
-            INTERP_DELAY: 50,
+            INTERP_DELAY: 80, // Tighter buffer
+            lastUpdate: 0,
+            updateRate: 30, // Send every 30ms (33 ticks/sec)
             serverFood: [],
 
             // Change this to your Render.com URL after deployment
@@ -1190,7 +1192,8 @@
                 }
 
                 this.socket = io(this.SERVER_URL, {
-                    transports: ['websocket', 'polling']
+                    transports: ['websocket'], // Force WebSocket for better performance
+                    upgrade: false
                 });
 
                 this.socket.on('connect', () => {
@@ -1423,14 +1426,20 @@
 
             sendUpdate() {
                 if (!this.connected || !GAME.player) return;
+
+                const now = Date.now();
+                if (now - this.lastUpdate < this.updateRate) return;
+                this.lastUpdate = now;
+
+                const p = GAME.player;
                 this.socket.emit('playerUpdate', {
-                    x: GAME.player.x,
-                    y: GAME.player.y,
-                    angle: GAME.player.angle,
-                    segments: GAME.player.segments.slice(0, 50),
-                    score: GAME.player.score,
-                    isBoosting: GAME.player.isBoosting,
-                    isDead: GAME.player.isDead
+                    x: Math.round(p.x),
+                    y: Math.round(p.y),
+                    angle: Number(p.angle.toFixed(2)),
+                    segments: p.segments.slice(0, 50).map(s => ({ x: Math.round(s.x), y: Math.round(s.y) })),
+                    score: Math.floor(p.score),
+                    isBoosting: p.isBoosting,
+                    isDead: p.isDead
                 });
             },
 
@@ -2121,11 +2130,14 @@
                     }
                 }
 
-                // Draw name
+                // Draw name with professional look
                 ctx.fillStyle = '#fff';
-                ctx.font = '16px Orbitron';
+                ctx.font = 'bold 16px Orbitron';
                 ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0,0,0,0.8)';
+                ctx.shadowBlur = 4;
                 ctx.fillText(p.name, p.x, p.y - 40);
+                ctx.shadowBlur = 0;
             },
 
             drawMinimap() {
