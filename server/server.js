@@ -34,7 +34,7 @@ function generateRoomCode() {
 // Socket.IO Connection
 io.on('connection', (socket) => {
     console.log(`Player connected: ${socket.id}`);
-    
+
     let currentRoom = null;
     let playerName = 'Player';
 
@@ -43,20 +43,20 @@ io.on('connection', (socket) => {
         const roomCode = generateRoomCode();
         const game = new Game(roomCode);
         rooms.set(roomCode, game);
-        
+
         playerName = data.name || 'Player';
         currentRoom = roomCode;
-        
+
         socket.join(roomCode);
         game.addPlayer(socket.id, playerName, data.skin);
-        
-        socket.emit('roomCreated', { 
-            roomCode, 
+
+        socket.emit('roomCreated', {
+            roomCode,
             playerId: socket.id,
             players: game.getPlayersData(),
             food: game.food
         });
-        
+
         console.log(`Room created: ${roomCode} by ${playerName}`);
     });
 
@@ -64,23 +64,23 @@ io.on('connection', (socket) => {
     socket.on('joinRoom', (data) => {
         const roomCode = data.roomCode.toUpperCase();
         const game = rooms.get(roomCode);
-        
+
         if (!game) {
             socket.emit('error', { message: 'Room not found!' });
             return;
         }
-        
+
         if (game.players.size >= 20) {
             socket.emit('error', { message: 'Room is full!' });
             return;
         }
-        
+
         playerName = data.name || 'Player';
         currentRoom = roomCode;
-        
+
         socket.join(roomCode);
         game.addPlayer(socket.id, playerName, data.skin);
-        
+
         // Notify new player
         socket.emit('roomJoined', {
             roomCode,
@@ -88,14 +88,14 @@ io.on('connection', (socket) => {
             players: game.getPlayersData(),
             food: game.food
         });
-        
+
         // Notify other players
         socket.to(roomCode).emit('playerJoined', {
             id: socket.id,
             name: playerName,
             ...game.players.get(socket.id)
         });
-        
+
         console.log(`${playerName} joined room: ${roomCode}`);
     });
 
@@ -104,9 +104,9 @@ io.on('connection', (socket) => {
         if (!currentRoom) return;
         const game = rooms.get(currentRoom);
         if (!game) return;
-        
+
         game.updatePlayer(socket.id, data);
-        
+
         // Broadcast to other players in room
         socket.to(currentRoom).emit('playerMoved', {
             id: socket.id,
@@ -119,7 +119,7 @@ io.on('connection', (socket) => {
         if (!currentRoom) return;
         const game = rooms.get(currentRoom);
         if (!game) return;
-        
+
         const result = game.eatFood(socket.id, data.foodIndex);
         if (result) {
             io.to(currentRoom).emit('foodEaten', {
@@ -136,7 +136,7 @@ io.on('connection', (socket) => {
         if (!currentRoom) return;
         const game = rooms.get(currentRoom);
         if (!game) return;
-        
+
         game.playerDied(socket.id);
         io.to(currentRoom).emit('playerDeath', {
             id: socket.id,
@@ -149,7 +149,7 @@ io.on('connection', (socket) => {
         if (!currentRoom) return;
         const game = rooms.get(currentRoom);
         if (!game) return;
-        
+
         game.respawnPlayer(socket.id);
         io.to(currentRoom).emit('playerRespawned', {
             id: socket.id,
@@ -170,13 +170,13 @@ io.on('connection', (socket) => {
     // Disconnect
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
-        
+
         if (currentRoom) {
             const game = rooms.get(currentRoom);
             if (game) {
                 game.removePlayer(socket.id);
                 socket.to(currentRoom).emit('playerLeft', { id: socket.id });
-                
+
                 // Delete empty rooms
                 if (game.players.size === 0) {
                     rooms.delete(currentRoom);
@@ -189,15 +189,16 @@ io.on('connection', (socket) => {
 
 // Health check endpoint
 app.get('/', (req, res) => {
-    res.json({ 
-        status: 'ok', 
+    res.json({
+        status: 'ok',
         rooms: rooms.size,
         players: Array.from(rooms.values()).reduce((acc, g) => acc + g.players.size, 0)
     });
 });
 
 // Start server
+// Start server
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 HANISH.IO Server running on port ${PORT}`);
 });
