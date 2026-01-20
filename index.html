@@ -1443,6 +1443,21 @@
                 if (this.connected) {
                     this.socket.emit('playerDied', { killedBy });
                 }
+            },
+
+            update() {
+                if (!this.connected) return;
+
+                this.otherPlayers.forEach((player, id) => {
+                    const state = this.getInterpolatedState(id);
+                    if (state) {
+                        player.x = state.x;
+                        player.y = state.y;
+                        player.angle = state.angle;
+                        player.segments = state.segments;
+                        player.score = state.score;
+                    }
+                });
             }
         };
 
@@ -1883,6 +1898,11 @@
 
             update() {
                 if (!this.running || !this.player) return;
+
+                if (this.isOnline) {
+                    MULTIPLAYER.sendUpdate();
+                    MULTIPLAYER.update();
+                }
                 this.cam.x += (this.player.x - this.cam.x) * 0.1;
                 this.cam.y += (this.player.y - this.cam.y) * 0.1;
                 this.cam.zoom += (Math.max(0.35, 1.2 - this.player.score / 8000) - this.cam.zoom) * 0.045;
