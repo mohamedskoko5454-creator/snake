@@ -1160,7 +1160,7 @@
             isHost: false,
             otherPlayers: new Map(),
             updates: new Map(),
-            INTERP_DELAY: 100,
+            INTERP_DELAY: 50,
             serverFood: [],
 
             // Change this to your Render.com URL after deployment
@@ -1429,7 +1429,8 @@
                     angle: GAME.player.angle,
                     segments: GAME.player.segments.slice(0, 50),
                     score: GAME.player.score,
-                    isBoosting: GAME.player.isBoosting
+                    isBoosting: GAME.player.isBoosting,
+                    isDead: GAME.player.isDead
                 });
             },
 
@@ -1957,6 +1958,26 @@
                             }
                         }
                     });
+
+                    // Multiplayer Collisions
+                    if (this.isOnline) {
+                        MULTIPLAYER.otherPlayers.forEach(other => {
+                            if (other.isDead || !other.segments || other.segments.length < 2) return;
+
+                            // Head to Body collision (I hit them)
+                            if (Math.hypot(s.x - other.x, s.y - other.y) < 1400) {
+                                for (let i = 0; i < other.segments.length; i += 3) {
+                                    if (Math.hypot(s.x - other.segments[i].x, s.y - other.segments[i].y) < s.radius + 15) {
+                                        if (s === this.player && s.shieldTime <= 0) {
+                                            AUDIO.play('death');
+                                            MULTIPLAYER.sendDeath(other.name);
+                                            s.die();
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
                 });
 
                 this.pool.forEach(p => p.active && p.update());
@@ -1973,7 +1994,10 @@
                 this.currentLevel = lvl.lvl;
 
                 // Check if player is #1
-                let sorted = [...this.snakes].sort((a, b) => b.score - a.score);
+                let allSnakes = [...this.snakes];
+                if (this.isOnline) allSnakes = [...allSnakes, ...MULTIPLAYER.otherPlayers.values()];
+
+                let sorted = allSnakes.sort((a, b) => b.score - a.score);
                 this.leader = sorted[0];
                 if (this.leader === this.player && !STATS.data.reachedTop1) {
                     STATS.update('reachedTop1', true);
