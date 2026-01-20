@@ -226,6 +226,11 @@ io.on('connection', (socket) => {
         });
     });
 
+    // Ping/Pong
+    socket.on('ping', () => {
+        socket.emit('pong');
+    });
+
     // Disconnect
     socket.on('disconnect', () => {
         console.log(`Player disconnected: ${socket.id}`);
