@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Hanish.io - Pro Ultimate 2026</title>
+    <title>Hanish.io</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
 
@@ -414,6 +414,55 @@
                 width: 60px;
                 height: 60px;
             }
+
+            #mobile-boost-btn {
+                display: flex !important;
+            }
+        }
+
+        /* Mobile Boost Button */
+        #mobile-boost-btn {
+            display: none;
+            position: fixed;
+            bottom: 50px;
+            right: 50px;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #ff6b00, #ff0055);
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            color: white;
+            font-size: 12px;
+            font-weight: 900;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 100, 0, 0.5);
+            z-index: 500;
+            touch-action: none;
+        }
+
+        #mobile-boost-btn:active {
+            transform: scale(0.9);
+            box-shadow: 0 0 50px rgba(255, 100, 0, 0.9);
+        }
+
+        /* Sound Toggle */
+        #sound-toggle-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 45px;
+            height: 45px;
+            background: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 500;
         }
 
         /* Settings Panel */
@@ -790,9 +839,11 @@
             </div>
         </div>
 
-        <div id="minimap-ui" class="hidden">
-            <div id="minimap-box">
-                <canvas id="miniCanvas" width="140" height="140"></canvas>
+        <div id="minimap-ui" class="hidden"
+            style="position:fixed; bottom:15px; left:50%; transform:translateX(-50%); z-index:100;">
+            <div id="minimap-box"
+                style="background:radial-gradient(circle, rgba(10,20,30,0.95) 0%, rgba(5,10,15,0.98) 100%); border:3px solid rgba(0,255,136,0.6); border-radius:50%; padding:5px; box-shadow: 0 0 25px rgba(0,255,136,0.4), inset 0 0 30px rgba(0,0,0,0.5);">
+                <canvas id="miniCanvas" width="140" height="140" style="border-radius:50%; display:block;"></canvas>
             </div>
         </div>
 
@@ -800,9 +851,50 @@
             <div id="mobile-joy-knob"></div>
         </div>
 
+        <!-- Mobile Boost Button -->
+        <div id="mobile-boost-btn" class="interactive hidden"
+            ontouchstart="if(GAME.player) GAME.player.isBoosting = true;"
+            ontouchend="if(GAME.player) GAME.player.isBoosting = false;">
+            🚀 BOOST
+        </div>
+
+
+        <!-- Daily Reward Popup -->
+        <div id="daily-reward-popup" class="screen interactive hidden"
+            style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:9999;">
+            <div class="panel" style="text-align:center; padding:30px; min-width:300px; position:relative;">
+                <button
+                    onclick="document.getElementById('daily-reward-popup').classList.add('hidden'); localStorage.setItem('h_last_daily', new Date().toDateString());"
+                    style="position:absolute; top:10px; right:10px; background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+                <h2 style="color:var(--gold); margin-bottom:15px;">🎁 مكافأة يومية!</h2>
+                <p style="font-size:40px; margin:20px 0;">💰</p>
+                <p id="daily-reward-amount" style="font-size:24px; color:var(--primary); font-weight:900;">+50 COINS</p>
+                <p style="color:#94a3b8; font-size:12px; margin-top:10px;">عُد غداً لمكافأة أكبر!</p>
+                <button class="main-btn btn-green interactive" style="margin-top:20px; width:100%;"
+                    onclick="DAILY.claim()">استلام!</button>
+            </div>
+        </div>
+
         <!-- Timer & Level -->
         <div id="level-display" class="hidden">LVL 1 - ROOKIE</div>
         <div id="game-timer" class="hidden">00:00</div>
+
+        <!-- Spectator UI -->
+        <div id="spectator-ui" class="hidden interactive" style="position:fixed; bottom:20px; left:20px; z-index:1000;">
+            <div
+                style="background:rgba(0,0,0,0.9); padding:12px 18px; border-radius:15px; display:flex; flex-direction:column; align-items:center; gap:8px; border:2px solid var(--primary); min-width:180px;">
+                <span style="color:var(--primary); font-weight:bold; font-size:14px;">👻 SPECTATING</span>
+                <div id="spectator-target-info" style="text-align:center; font-size:11px; color:#fff;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button class="main-btn btn-outline" style="padding:6px 12px; font-size:11px;"
+                        onclick="SPECTATOR.prev()">⬅️</button>
+                    <button class="main-btn btn-outline" style="padding:6px 12px; font-size:11px;"
+                        onclick="SPECTATOR.next()">➡️</button>
+                    <button class="main-btn" style="padding:6px 12px; font-size:11px; background:var(--danger);"
+                        onclick="SPECTATOR.stop()">✕</button>
+                </div>
+            </div>
+        </div>
 
         <!-- Powerup Indicator -->
         <div id="powerup-indicator" class="hidden"></div>
@@ -858,6 +950,13 @@
             <div class="setting-row">
                 <label>✨ Particles</label>
                 <select id="particles-toggle" onchange="SETTINGS.setParticles(this.value)">
+                    <option value="on">On</option>
+                    <option value="off">Off</option>
+                </select>
+            </div>
+            <div class="setting-row">
+                <label>🔊 Sound</label>
+                <select id="sound-toggle" onchange="AUDIO.enabled = this.value === 'on';">
                     <option value="on">On</option>
                     <option value="off">Off</option>
                 </select>
@@ -982,8 +1081,10 @@
             <p style="font-size:12px; color:var(--gold); margin-top:15px;">🏆 HIGH SCORE: <span id="over-highscore"
                     style="font-weight:900;">0</span></p>
         </div>
-        <div class="btn-row" style="margin-top:25px; flex-wrap:wrap; justify-content:center;">
+        <div class="btn-row" style="margin-top:25px; flex-wrap:wrap; justify-content:center; gap:10px;">
             <button class="main-btn btn-green" onclick="GAME.revive()" style="min-width:150px;">REVIVE (50 💰)</button>
+            <button class="main-btn btn-outline" onclick="SPECTATOR.start()" style="min-width:150px;">👻
+                SPECTATE</button>
             <button class="main-btn btn-outline" onclick="location.reload()" style="min-width:150px;">MAIN MENU</button>
         </div>
     </div>
@@ -994,10 +1095,10 @@
          */
 
         const CONFIG = {
-            MAP_SIZE: 3800,
+            MAP_SIZE: 5500, // Increased from 3800 for more space
             INITIAL_LEN: 15,
-            FOOD_COUNT: 700,
-            BOT_COUNT: 22,
+            FOOD_COUNT: 1200, // More food for bigger map
+            BOT_COUNT: 30, // More bots for competition
             ABILITY_CD: { dash: 2500, bomb: 7000, magnet: 10000, shield: 13000 },
             REVIVE_PRICE: 50,
             SKINS: [
@@ -1189,9 +1290,9 @@
             isHost: false,
             otherPlayers: new Map(),
             updates: new Map(),
-            INTERP_DELAY: 150, // Default safe buffer for high latency
+            INTERP_DELAY: 80, // Reduced for smoother gameplay
             lastUpdate: 0,
-            updateRate: 30, // Send every 30ms (33 ticks/sec)
+            updateRate: 16, // Send every 16ms (60 ticks/sec) for maximum smoothness
             serverFood: [],
 
             // Change this to your Render.com URL after deployment
@@ -1546,6 +1647,38 @@
             }
         };
 
+        // --- KILL STREAK SYSTEM ---
+        const KILLSTREAK = {
+            count: 0,
+            lastKillTime: 0,
+            timeout: 8000, // 8 seconds to get next kill for combo
+
+            addKill() {
+                const now = Date.now();
+                if (now - this.lastKillTime < this.timeout) {
+                    this.count++;
+                } else {
+                    this.count = 1;
+                }
+                this.lastKillTime = now;
+
+                const names = ['', 'DOUBLE KILL!', 'TRIPLE KILL!', 'QUAD KILL!', 'PENTA KILL!', 'LEGENDARY!'];
+                if (this.count >= 2 && this.count <= 5) {
+                    GAME.notify(`🔥 ${names[this.count]}`);
+                    AUDIO.play('achievement');
+                    GAME.coins += this.count * 10;
+                } else if (this.count > 5) {
+                    GAME.notify(`🔥🔥 UNSTOPPABLE! (${this.count}x)`);
+                    AUDIO.play('achievement');
+                    GAME.coins += this.count * 15;
+                }
+            },
+
+            reset() {
+                this.count = 0;
+            }
+        };
+
         // --- CLASSES ---
 
         class Particle {
@@ -1601,8 +1734,148 @@
                 while (this.segments.length > this.len) this.segments.pop();
 
                 if (this.isBot) {
-                    if (Math.random() < 0.04) this.targetAngle += (Math.random() - 0.5);
-                    if (Math.abs(this.x) > CONFIG.MAP_SIZE - 200 || Math.abs(this.y) > CONFIG.MAP_SIZE - 200) this.targetAngle = Math.atan2(-this.y, -this.x);
+                    // ========== ULTRA ADVANCED BOT AI ==========
+                    let bestFood = null;
+                    let bestFoodScore = -Infinity;
+                    let nearestPrey = null;
+                    let nearestPreyDist = Infinity;
+                    let nearestThreat = null;
+                    let nearestThreatDist = Infinity;
+                    let dangerZones = [];
+
+                    // === SMART FOOD SELECTION (prioritize value/distance ratio) ===
+                    GAME.food.forEach(f => {
+                        const d = Math.hypot(this.x - f.x, this.y - f.y);
+                        if (d < 800) {
+                            // Score = food value / distance (higher is better)
+                            const foodScore = (f.val * 10) / (d + 1);
+                            if (foodScore > bestFoodScore) {
+                                bestFoodScore = foodScore;
+                                bestFood = f;
+                            }
+                        }
+                    });
+
+                    // === ANALYZE ALL SNAKES ===
+                    GAME.snakes.forEach(s => {
+                        if (s === this || s.isDead) return;
+                        const d = Math.hypot(this.x - s.x, this.y - s.y);
+
+                        // Mark danger zones (enemy body segments)
+                        if (d < 500) {
+                            s.segments.forEach((seg, i) => {
+                                if (i % 3 === 0) { // Sample every 3rd segment
+                                    dangerZones.push({ x: seg.x, y: seg.y, r: 30 });
+                                }
+                            });
+                        }
+
+                        // Find prey (70% smaller or less)
+                        if (s.score < this.score * 0.7 && d < 600 && d < nearestPreyDist) {
+                            nearestPreyDist = d;
+                            nearestPrey = s;
+                        }
+
+                        // Find threats (30% bigger or more)
+                        if (s.score > this.score * 1.3 && d < 500 && d < nearestThreatDist) {
+                            nearestThreatDist = d;
+                            nearestThreat = s;
+                        }
+                    });
+
+                    // === DECISION MAKING WITH PRIORITY ===
+                    let action = 'wander';
+                    let targetX = this.x;
+                    let targetY = this.y;
+
+                    // PRIORITY 1: ESCAPE from threats
+                    if (nearestThreat && nearestThreatDist < 350) {
+                        action = 'flee';
+                        // Flee perpendicular to threat for unpredictability
+                        const fleeAngle = Math.atan2(this.y - nearestThreat.y, this.x - nearestThreat.x);
+                        const perpendicular = fleeAngle + (Math.random() > 0.5 ? Math.PI / 3 : -Math.PI / 3);
+                        targetX = this.x + Math.cos(perpendicular) * 500;
+                        targetY = this.y + Math.sin(perpendicular) * 500;
+                        this.isBoosting = this.score > 30;
+                    }
+                    // PRIORITY 2: HUNT prey aggressively
+                    else if (nearestPrey && this.score > 80 && nearestPreyDist < 400) {
+                        action = 'hunt';
+                        // Predict prey position (intercept point)
+                        const preySpeed = nearestPrey.isBoosting ? 7 : 4;
+                        const interceptTime = nearestPreyDist / 7; // Our boost speed
+                        const predictX = nearestPrey.x + Math.cos(nearestPrey.angle) * preySpeed * interceptTime * 0.7;
+                        const predictY = nearestPrey.y + Math.sin(nearestPrey.angle) * preySpeed * interceptTime * 0.7;
+                        targetX = predictX;
+                        targetY = predictY;
+                        this.isBoosting = nearestPreyDist < 250 && this.score > 100;
+                    }
+                    // PRIORITY 3: Cut off prey path (if we're bigger and close)
+                    else if (nearestPrey && this.score > 150 && nearestPreyDist < 600) {
+                        action = 'cutoff';
+                        // Move to where prey is heading
+                        const ahead = 150;
+                        targetX = nearestPrey.x + Math.cos(nearestPrey.angle) * ahead;
+                        targetY = nearestPrey.y + Math.sin(nearestPrey.angle) * ahead;
+                        this.isBoosting = nearestPreyDist < 300;
+                    }
+                    // PRIORITY 4: Collect food smartly
+                    else if (bestFood) {
+                        action = 'collect';
+                        targetX = bestFood.x;
+                        targetY = bestFood.y;
+                        // Boost for high-value food
+                        this.isBoosting = bestFood.val >= 5 && this.score > 50;
+                    }
+                    // DEFAULT: Wander with purpose
+                    else {
+                        action = 'wander';
+                        if (Math.random() < 0.02) {
+                            // Move toward center if far, else random
+                            const distFromCenter = Math.hypot(this.x, this.y);
+                            if (distFromCenter > CONFIG.MAP_SIZE * 0.6) {
+                                targetX = 0;
+                                targetY = 0;
+                            } else {
+                                targetX = this.x + (Math.random() - 0.5) * 1000;
+                                targetY = this.y + (Math.random() - 0.5) * 1000;
+                            }
+                        } else {
+                            targetX = this.x + Math.cos(this.targetAngle) * 100;
+                            targetY = this.y + Math.sin(this.targetAngle) * 100;
+                        }
+                        this.isBoosting = false;
+                    }
+
+                    // === DANGER ZONE AVOIDANCE ===
+                    dangerZones.forEach(zone => {
+                        const d = Math.hypot(targetX - zone.x, targetY - zone.y);
+                        if (d < zone.r + 50) {
+                            // Push target away from danger
+                            const pushAngle = Math.atan2(targetY - zone.y, targetX - zone.x);
+                            targetX += Math.cos(pushAngle) * 60;
+                            targetY += Math.sin(pushAngle) * 60;
+                        }
+                    });
+
+                    // === BORDER AVOIDANCE (highest priority) ===
+                    const borderDist = 500;
+                    if (Math.abs(this.x) > CONFIG.MAP_SIZE - borderDist) {
+                        targetX = Math.sign(this.x) * (CONFIG.MAP_SIZE - borderDist - 200);
+                        this.isBoosting = true;
+                    }
+                    if (Math.abs(this.y) > CONFIG.MAP_SIZE - borderDist) {
+                        targetY = Math.sign(this.y) * (CONFIG.MAP_SIZE - borderDist - 200);
+                        this.isBoosting = true;
+                    }
+
+                    // === UPDATE ANGLE ===
+                    this.targetAngle = Math.atan2(targetY - this.y, targetX - this.x);
+
+                    // === RANDOM JITTER for unpredictability ===
+                    if (action === 'wander' && Math.random() < 0.05) {
+                        this.targetAngle += (Math.random() - 0.5) * 0.5;
+                    }
                 }
 
                 if (this.magnetTime > 0) {
@@ -1627,12 +1900,34 @@
                     for (let j = 0; j < 4; j++) GAME.createParticle(this.segments[i].x, this.segments[i].y, this.skin.colors[0]);
                 }
 
-                if (this === GAME.player) GAME.end();
-                else {
-                    // Sync Particles
-                    for (let k = 0; k < 8; k++) GAME.createParticle(this.x, this.y, this.skin.colors[0]);
+                if (this === GAME.player) {
+                    KILLSTREAK.reset();
+                    COMBO.reset();
+                    GAME.end();
+                } else {
+                    // Death explosion particles
+                    for (let k = 0; k < 15; k++) {
+                        GAME.createParticle(this.x + (Math.random() - 0.5) * 50, this.y + (Math.random() - 0.5) * 50, this.skin.colors[0]);
+                    }
 
-                    if (killer === GAME.player) { killer.kills++; GAME.notify(`KILLED ${this.name.toUpperCase()}!`); }
+                    if (killer === GAME.player) {
+                        killer.kills++;
+                        KILLSTREAK.addKill();
+
+                        // Coin bonus based on victim score
+                        const bonus = Math.floor(this.score / 10);
+                        if (bonus > 0) {
+                            GAME.coins += bonus;
+                            GAME.coinsThisGame += bonus;
+                            GAME.notify(`💀 KILLED ${this.name.toUpperCase()}! +${bonus} 💰`);
+                        } else {
+                            GAME.notify(`💀 KILLED ${this.name.toUpperCase()}!`);
+                        }
+
+                        // Screen flash effect
+                        GAME.screenFlash('#00ff88', 150);
+                        AUDIO.play('kill');
+                    }
                     let idx = GAME.snakes.indexOf(this);
                     setTimeout(() => { if (idx != -1) GAME.snakes[idx] = new Snake("Bot " + Math.floor(Math.random() * 100), CONFIG.SKINS[Math.floor(Math.random() * CONFIG.SKINS.length)], true); }, 4000);
                 }
@@ -1791,7 +2086,12 @@
 
                 // Show UI
                 document.getElementById('menu-screen').classList.add('hidden');
-                document.querySelectorAll('.panel, .interactive, #minimap-ui, #xp-bar-outer, #level-display, #game-timer, #powerup-indicator').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.panel, .interactive, #minimap-ui, #xp-bar-outer, #level-display, #game-timer, #powerup-indicator, #mobile-boost-btn').forEach(el => el.classList.remove('hidden'));
+
+                // Keep these specifically hidden
+                document.getElementById('spectator-ui').classList.add('hidden');
+                document.getElementById('daily-reward-popup').classList.add('hidden');
+                document.getElementById('death-screen').classList.add('hidden');
 
                 this.running = true;
                 STATS.update('gamesPlayed', 1);
@@ -1913,6 +2213,18 @@
                 if (p) p.init(x, y, c);
             },
 
+            screenFlash(color, duration) {
+                const flash = document.createElement('div');
+                flash.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: ${color}; opacity: 0.3; pointer-events: none;
+                    z-index: 9999; transition: opacity ${duration}ms ease-out;
+                `;
+                document.body.appendChild(flash);
+                setTimeout(() => flash.style.opacity = '0', 10);
+                setTimeout(() => flash.remove(), duration);
+            },
+
             useAbility(type) {
                 if (!this.player || this.player.isDead || this.player.cds[type] > 0) return;
                 let p = this.player;
@@ -1993,14 +2305,33 @@
             update() {
                 if (!this.running || !this.player) return;
 
-                if (this.isOnline) {
+                // Spectator mode - still update game, just handle camera differently
+                const isSpectating = SPECTATOR.active;
+
+                if (isSpectating) {
+                    SPECTATOR.update();
+                } else {
+                    // Normal player camera tracking
+                    this.cam.x += (this.player.x - this.cam.x) * 0.1;
+                    this.cam.y += (this.player.y - this.cam.y) * 0.1;
+                    this.cam.zoom += (Math.max(0.35, 1.2 - this.player.score / 8000) - this.cam.zoom) * 0.045;
+
+                    // Track missions progress (only when not spectating)
+                    MISSIONS.update('score', this.player.score);
+                    MISSIONS.update('kills', this.player.kills);
+                    MISSIONS.update('food', this.foodCollected);
+                    MISSIONS.update('time', this.gameTime);
+                }
+
+                if (this.shake > 0) this.shake *= 0.9;
+
+                // Online sync (only when not spectating)
+                if (this.isOnline && !isSpectating) {
                     MULTIPLAYER.sendUpdate();
                     MULTIPLAYER.update();
                 }
-                this.cam.x += (this.player.x - this.cam.x) * 0.1;
-                this.cam.y += (this.player.y - this.cam.y) * 0.1;
-                this.cam.zoom += (Math.max(0.35, 1.2 - this.player.score / 8000) - this.cam.zoom) * 0.045;
-                if (this.shake > 0) this.shake *= 0.9;
+
+                // ALWAYS update all snakes and bots
                 this.snakes.forEach(s => s.update());
                 this.projectiles.forEach((p, i) => { p.update(); if (!p.active) this.projectiles.splice(i, 1); });
 
@@ -2225,27 +2556,65 @@
             },
 
             drawMinimap() {
-                this.mCtx.clearRect(0, 0, 140, 140);
-                let s = 140 / (CONFIG.MAP_SIZE * 2);
+                const size = 140;
+                const center = size / 2;
+                this.mCtx.clearRect(0, 0, size, size);
+                let s = size / (CONFIG.MAP_SIZE * 2);
 
-                // Draw local snakes
+                // Draw radar background circles
+                this.mCtx.strokeStyle = 'rgba(0,255,136,0.15)';
+                this.mCtx.lineWidth = 1;
+                for (let r = 20; r <= 60; r += 20) {
+                    this.mCtx.beginPath();
+                    this.mCtx.arc(center, center, r, 0, Math.PI * 2);
+                    this.mCtx.stroke();
+                }
+
+                // Draw crosshairs
+                this.mCtx.strokeStyle = 'rgba(0,255,136,0.1)';
+                this.mCtx.beginPath();
+                this.mCtx.moveTo(center, 0);
+                this.mCtx.lineTo(center, size);
+                this.mCtx.moveTo(0, center);
+                this.mCtx.lineTo(size, center);
+                this.mCtx.stroke();
+
+                // Draw local snakes (bots = orange, player = bright green)
                 this.snakes.forEach(sn => {
                     if (!sn.isDead) {
-                        this.mCtx.fillStyle = sn === this.player ? '#22c55e' : '#ef4444';
-                        this.mCtx.beginPath();
-                        this.mCtx.arc((sn.x + CONFIG.MAP_SIZE) * s, (sn.y + CONFIG.MAP_SIZE) * s, sn === this.player ? 4 : 2, 0, 7);
-                        this.mCtx.fill();
+                        const px = (sn.x + CONFIG.MAP_SIZE) * s;
+                        const py = (sn.y + CONFIG.MAP_SIZE) * s;
+
+                        if (sn === this.player) {
+                            // Player - pulsing green dot
+                            this.mCtx.fillStyle = '#00ff88';
+                            this.mCtx.shadowColor = '#00ff88';
+                            this.mCtx.shadowBlur = 8;
+                            this.mCtx.beginPath();
+                            this.mCtx.arc(px, py, 5, 0, Math.PI * 2);
+                            this.mCtx.fill();
+                            this.mCtx.shadowBlur = 0;
+                        } else {
+                            // Bots - small orange dots
+                            this.mCtx.fillStyle = '#ff6b35';
+                            this.mCtx.beginPath();
+                            this.mCtx.arc(px, py, 2, 0, Math.PI * 2);
+                            this.mCtx.fill();
+                        }
                     }
                 });
 
-                // Draw remote players (online mode)
+                // Draw remote players (online mode) - cyan
                 if (this.isOnline) {
                     MULTIPLAYER.otherPlayers.forEach(p => {
                         if (!p.isDead) {
                             this.mCtx.fillStyle = '#00d5ff';
+                            this.mCtx.shadowColor = '#00d5ff';
+                            this.mCtx.shadowBlur = 4;
                             this.mCtx.beginPath();
-                            this.mCtx.arc((p.x + CONFIG.MAP_SIZE) * s, (p.y + CONFIG.MAP_SIZE) * s, 3, 0, 7);
+                            this.mCtx.arc((p.x + CONFIG.MAP_SIZE) * s, (p.y + CONFIG.MAP_SIZE) * s, 3, 0, Math.PI * 2);
                             this.mCtx.fill();
+                            this.mCtx.shadowBlur = 0;
                         }
                     });
                 }
@@ -2316,6 +2685,275 @@
         window.addEventListener('keydown', e => {
             if (e.key === 'Enter' && GAME.isOnline && !GAME.player.isDead) CHAT.toggle();
         });
+
+        // --- DAILY REWARDS ---
+        const DAILY = {
+            rewards: [25, 50, 75, 100, 150, 200, 300], // Day 1-7 rewards
+
+            check() {
+                const lastClaim = localStorage.getItem('h_last_daily');
+                const today = new Date().toDateString();
+                if (lastClaim !== today) {
+                    this.show();
+                }
+            },
+
+            show() {
+                const streak = parseInt(localStorage.getItem('h_daily_streak')) || 0;
+                const reward = this.rewards[Math.min(streak, this.rewards.length - 1)];
+                document.getElementById('daily-reward-amount').innerText = `+${reward} COINS`;
+                document.getElementById('daily-reward-popup').classList.remove('hidden');
+            },
+
+            claim() {
+                const streak = parseInt(localStorage.getItem('h_daily_streak')) || 0;
+                const reward = this.rewards[Math.min(streak, this.rewards.length - 1)];
+
+                GAME.coins += reward;
+                localStorage.setItem('h_coins', GAME.coins);
+                localStorage.setItem('h_last_daily', new Date().toDateString());
+                localStorage.setItem('h_daily_streak', streak + 1);
+
+                document.getElementById('daily-reward-popup').classList.add('hidden');
+                GAME.notify(`🎁 +${reward} COINS!`);
+                AUDIO.play('gold');
+            }
+        };
+
+        // Check daily rewards on page load
+        setTimeout(() => DAILY.check(), 1500);
+
+        // --- SPECTATOR MODE ---
+        const SPECTATOR = {
+            active: false,
+            target: null,
+            targetIndex: 0,
+            targets: [],
+
+            start() {
+                // Refresh targets list
+                this.refreshTargets();
+
+                if (this.targets.length === 0) {
+                    GAME.notify("❌ No players to spectate!");
+                    return;
+                }
+
+                document.getElementById('death-screen').classList.add('hidden');
+                this.active = true;
+                GAME.running = true;
+
+                // Pick first target (highest score)
+                this.targetIndex = 0;
+                this.target = this.targets[0];
+
+                GAME.notify(`👻 Spectating: ${this.target.name} (Score: ${Math.floor(this.target.score)})`);
+                document.getElementById('spectator-ui').classList.remove('hidden');
+
+                // Update spectator info display
+                this.updateInfo();
+            },
+
+            refreshTargets() {
+                this.targets = [];
+
+                // Add local bots
+                GAME.snakes.forEach(s => {
+                    if (!s.isDead && s !== GAME.player) {
+                        this.targets.push(s);
+                    }
+                });
+
+                // Add online players
+                if (GAME.isOnline && MULTIPLAYER.otherPlayers) {
+                    MULTIPLAYER.otherPlayers.forEach(p => {
+                        if (!p.isDead) this.targets.push(p);
+                    });
+                }
+
+                // Sort by score (highest first)
+                this.targets.sort((a, b) => (b.score || 0) - (a.score || 0));
+            },
+
+            next() {
+                this.refreshTargets();
+                if (this.targets.length === 0) {
+                    GAME.notify("❌ No more players!");
+                    this.stop();
+                    return;
+                }
+
+                this.targetIndex = (this.targetIndex + 1) % this.targets.length;
+                this.target = this.targets[this.targetIndex];
+                GAME.notify(`👻 Spectating: ${this.target.name}`);
+                this.updateInfo();
+            },
+
+            prev() {
+                this.refreshTargets();
+                if (this.targets.length === 0) return;
+
+                this.targetIndex = (this.targetIndex - 1 + this.targets.length) % this.targets.length;
+                this.target = this.targets[this.targetIndex];
+                GAME.notify(`👻 Spectating: ${this.target.name}`);
+                this.updateInfo();
+            },
+
+            stop() {
+                this.active = false;
+                this.target = null;
+                document.getElementById('spectator-ui').classList.add('hidden');
+                document.getElementById('death-screen').classList.remove('hidden');
+                GAME.running = false;
+            },
+
+            updateInfo() {
+                const infoEl = document.getElementById('spectator-target-info');
+                if (infoEl && this.target) {
+                    infoEl.innerHTML = `
+                        <div style="font-weight:bold; color:var(--primary);">${this.target.name}</div>
+                        <div>Score: ${Math.floor(this.target.score || 0)}</div>
+                        <div>Length: ${this.target.segments?.length || 0}</div>
+                    `;
+                }
+            },
+
+            update() {
+                if (!this.active) return;
+
+                // Check if target is still alive
+                if (!this.target || this.target.isDead) {
+                    this.refreshTargets();
+                    if (this.targets.length > 0) {
+                        this.target = this.targets[0];
+                        this.targetIndex = 0;
+                        GAME.notify(`👻 Switched to: ${this.target.name}`);
+                    } else {
+                        GAME.notify("❌ All players dead!");
+                        this.stop();
+                        return;
+                    }
+                }
+
+                // Camera follows target smoothly
+                if (this.target) {
+                    GAME.cam.x += (this.target.x - GAME.cam.x) * 0.08;
+                    GAME.cam.y += (this.target.y - GAME.cam.y) * 0.08;
+                    GAME.cam.zoom = 0.6; // Zoom out a bit for better view
+
+                    // Update info display
+                    this.updateInfo();
+                }
+            }
+        };
+
+        // --- DAILY MISSIONS ---
+        const MISSIONS = {
+            list: [
+                { id: 'm_kills', name: '💀 Kill 5 Players', target: 5, key: 'kills', reward: 50 },
+                { id: 'm_food', name: '🍎 Collect 100 Food', target: 100, key: 'food', reward: 30 },
+                { id: 'm_score', name: '🎯 Reach Score 500', target: 500, key: 'score', reward: 75 },
+                { id: 'm_survive', name: '⏱️ Survive 3 Minutes', target: 180, key: 'time', reward: 40 }
+            ],
+            progress: {},
+
+            init() {
+                const saved = localStorage.getItem('h_missions_progress');
+                const lastDate = localStorage.getItem('h_missions_date');
+                const today = new Date().toDateString();
+
+                if (lastDate !== today) {
+                    // Reset for new day
+                    this.progress = { kills: 0, food: 0, score: 0, time: 0 };
+                    localStorage.setItem('h_missions_date', today);
+                } else if (saved) {
+                    this.progress = JSON.parse(saved);
+                } else {
+                    this.progress = { kills: 0, food: 0, score: 0, time: 0 };
+                }
+            },
+
+            update(key, value) {
+                if (!this.progress[key]) this.progress[key] = 0;
+                this.progress[key] = Math.max(this.progress[key], value);
+                localStorage.setItem('h_missions_progress', JSON.stringify(this.progress));
+
+                // Check for completions
+                this.list.forEach(m => {
+                    if (m.key === key && this.progress[key] >= m.target) {
+                        const claimed = localStorage.getItem('h_claimed_' + m.id + '_' + new Date().toDateString());
+                        if (!claimed) {
+                            GAME.coins += m.reward;
+                            localStorage.setItem('h_coins', GAME.coins);
+                            localStorage.setItem('h_claimed_' + m.id + '_' + new Date().toDateString(), 'true');
+                            GAME.notify(`✅ ${m.name} COMPLETE! +${m.reward} 💰`);
+                            AUDIO.play('achievement');
+                        }
+                    }
+                });
+            }
+        };
+
+        // Initialize missions
+        MISSIONS.init();
+
+        // --- COMBO MULTIPLIER SYSTEM ---
+        const COMBO = {
+            count: 0,
+            multiplier: 1,
+            lastFoodTime: 0,
+            timeout: 3000, // 3 seconds to maintain combo
+
+            addFood() {
+                const now = Date.now();
+                if (now - this.lastFoodTime < this.timeout) {
+                    this.count++;
+                    this.multiplier = 1 + Math.floor(this.count / 5) * 0.1; // +10% every 5 food
+                } else {
+                    this.count = 1;
+                    this.multiplier = 1;
+                }
+                this.lastFoodTime = now;
+
+                // Show combo notification at milestones
+                if (this.count === 10) GAME.notify("🔥 COMBO x10!");
+                else if (this.count === 25) GAME.notify("🔥🔥 COMBO x25!");
+                else if (this.count === 50) GAME.notify("🔥🔥🔥 MEGA COMBO x50!");
+
+                return this.multiplier;
+            },
+
+            reset() {
+                this.count = 0;
+                this.multiplier = 1;
+            }
+        };
+
+        // --- LEADERBOARD POSITION TRACKER ---
+        const LEADERBOARD = {
+            lastPosition: 0,
+
+            check() {
+                if (!GAME.player || GAME.player.isDead) return;
+
+                const sorted = [...GAME.snakes].filter(s => !s.isDead).sort((a, b) => b.score - a.score);
+                const position = sorted.indexOf(GAME.player) + 1;
+
+                if (this.lastPosition > 0 && position < this.lastPosition) {
+                    if (position === 1) {
+                        GAME.notify("👑 #1 - أنت الأول!");
+                        AUDIO.play('achievement');
+                        STATS.update('reachedTop1', true);
+                    } else if (position <= 3) {
+                        GAME.notify(`🏆 You're now #${position}!`);
+                    }
+                }
+                this.lastPosition = position;
+            }
+        };
+
+        // Check leaderboard every 2 seconds
+        setInterval(() => LEADERBOARD.check(), 2000);
 
     </script>
 </body>
